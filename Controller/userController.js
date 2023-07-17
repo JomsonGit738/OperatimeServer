@@ -173,14 +173,10 @@ exports.seatBooking = async (request,response)=>{
 exports.getBookedSeats = async (request,response)=>{
     const movietitle = request.params.id
     let newDate = new Date();
-    console.log(newDate.toLocaleDateString());
     try{
         const movie = await bookings.find({movietitle})
-        console.log(movie);
         let data = movie.find((item)=>item.date == newDate.toLocaleDateString())
-        console.log(data);
         if(data){
-            console.log("data found here!"+data);
             response.status(200).json(data)
         } else {
             response.status(204).json('movie data not found')
