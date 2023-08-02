@@ -2,6 +2,8 @@ const express = require('express')
 
 const router = new express.Router()
 
+const middleware = require('../Middleware/routerSpecific')
+
 const userController =  require('../Controller/userController')
 
 
@@ -18,7 +20,7 @@ router.post('/user/gosin',userController.GoogleSignIn)
 router.post('/user/details',userController.getUserDetails)
 
 //router for seatBooking
-router.post('/booking',userController.seatBooking)
+router.post('/booking',middleware.loginMiddleware,userController.seatBooking)
 
 //router for getBookedSeats
 router.get('/getseats/:id',userController.getBookedSeats)

@@ -1,5 +1,6 @@
 const users = require('../Models/userSchema')
 const bookings = require('../Models/bookings')
+const jwt = require('jsonwebtoken')
 
 
 //Sign Up
@@ -44,7 +45,12 @@ exports.login = async (request,response)=>{
 
         const existingUser = await users.findOne({email,password})
         if(existingUser){
-            response.status(200).json(existingUser)
+
+            const token = jwt.sign({
+                userEmail:email
+            },"supersecreatkey12345")
+
+            response.status(200).json({existingUser,token})
         } else {
             response.status(404).json("Email & password are not matching, check again...")
         }
@@ -59,19 +65,27 @@ exports.GoogleSignIn = async (request,response)=>{
     const {email,username} = request.body
     try{
 
-        const existingGoogleUser = await users.findOne({email,username})
-        if(existingGoogleUser){
-            response.status(200).json(existingGoogleUser)
+        const existingUser = await users.findOne({email,username})
+        if(existingUser){
+            const token = jwt.sign({
+                userEmail:email
+            },"supersecreatkey12345")
+            response.status(200).json({existingUser,token})
         } else {
             //if new User sign-Up
-            const newuser = new users({
+            const existingUser = new users({
                 username,
                 email,
                 password:'#23Gsin',
                 tickets:[]
             })
-            await newuser.save()
-            response.status(200).json(newuser)
+            await existingUser.save()
+
+            const token = jwt.sign({
+                userEmail:email
+            },"supersecreatkey12345")
+
+            response.status(200).json({existingUser,token})
         }
 
     }catch(error){
@@ -96,7 +110,7 @@ exports.getUserDetails = async (request,response)=>{
 
 //seatbooking
 exports.seatBooking = async (request,response)=>{
-    console.log(request.body);
+    //console.log(request.body);
     const {date,operaId,movietitle,seats,email,time,mimage} = request.body
     if(!date || !movietitle || !seats || !email || !time || !mimage){
         response.status(403).json("all inputs not reached...")
