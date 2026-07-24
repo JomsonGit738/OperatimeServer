@@ -12,7 +12,17 @@ const userSchema = mongoose.Schema({
     },
     password:{
         type:String,
-        required:true
+        // Google-only accounts do not receive a shared placeholder password.
+        required:false
+    },
+    googleSub:{
+        type:String,
+        unique:true,
+        sparse:true
+    },
+    photo:{
+        type:String,
+        default:""
     },
     tickets:{
         type:Array,

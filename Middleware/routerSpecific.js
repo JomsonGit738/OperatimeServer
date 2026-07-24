@@ -1,24 +1,46 @@
 
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken");
+const {
+  ACCESS_TOKEN_SECRET,
+  SESSION_COOKIE_NAME,
+} = require("../config/security");
 
-const loginMiddleware = (req,res,next)=>{
+const attachVerifiedIdentity = (request, token) => {
+  const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET, {
+    audience: "operatime-web",
+    issuer: "operatime-server",
+  });
+  request.userId = decoded.sub;
+  request.userEmail = decoded.userEmail;
+};
 
-    const authHeader = req.headers['authorization']
-    if(!authHeader || !authHeader.startsWith('Bearer ')){
-        return res.status(401).json({message:'Missing or invalid authorization header'})
+const loginMiddleware = (request, response, next) => {
+  const token = request.cookies?.[SESSION_COOKIE_NAME];
+  if (!token) {
+    return response.status(401).json({ message: "Authentication required" });
+  }
+
+  try {
+    attachVerifiedIdentity(request, token);
+    // Controllers use only this verified identity, never an email supplied by the browser.
+    return next();
+  } catch {
+    return response
+      .status(401)
+      .json({ message: "Session expired. Please log in again." });
+  }
+};
+
+const optionalLoginMiddleware = (request, _response, next) => {
+  const token = request.cookies?.[SESSION_COOKIE_NAME];
+  if (token) {
+    try {
+      attachVerifiedIdentity(request, token);
+    } catch {
+      // A guest or expired session is normal on public pages; protected routes still return 401.
     }
+  }
+  return next();
+};
 
-    const token = authHeader.replace('Bearer ','').trim()
-
-    try{
-        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || "supersecreatkey12345")
-        req.userEmail = decoded.userEmail
-        next()
-    }catch(error){
-        res.status(401).json({message:'Please log in to continue'})
-    }
-}
-
-module.exports = {
-    loginMiddleware
-}
+module.exports = { loginMiddleware, optionalLoginMiddleware };
